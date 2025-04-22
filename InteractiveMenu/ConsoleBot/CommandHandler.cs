@@ -1,24 +1,33 @@
+using InteractiveMenu.Exceptions;
+
 namespace InteractiveMenu
 {
-    public class ConsoleBot
+    public class CommandHandler
     {
         private static readonly List<string?> TaskList = new();
+        public static int TasksCount { get; set; }
+        public static int TaskLength { get; set; }
 
         public static string GetGreeting(params string[] commands) =>
             $"Введите любую из доступных команд: {string.Join(", ", commands)}";
 
-        public static void StartMenu()
+        public static int GetTasksCount()
         {
-            string? name = null;
+            Console.WriteLine("Введите максимально допустимое количество задач");
             var input = Console.ReadLine();
-
-            while (input != Commands.Exit)
-            {
-                input = HandleCommand(input, ref name);
-            }
+            Helper.ValidateString(input);
+            return Helper.ParseAndValidateInt(input, 1, 100);
+        }
+        
+        public static int GetTaskLength()
+        {
+            Console.WriteLine("Введите максимально допустимую длину задачи");
+            var input = Console.ReadLine();
+            Helper.ValidateString(input);
+            return Helper.ParseAndValidateInt(input, 1, 100);
         }
 
-        private static string? HandleCommand(string? input, ref string? name)
+        public static string? HandleCommand(string? input, ref string? name)
         {
             return input switch
             {
@@ -102,6 +111,21 @@ namespace InteractiveMenu
                 return Console.ReadLine();
             }
 
+            if (TaskList.Count == TasksCount)
+            {
+                throw new TaskCountLimitException(TasksCount);
+            }
+            
+            if (task.Length > TaskLength)
+            {
+                throw new TaskLengthLimitException(task.Length, TaskLength);
+            }
+            
+            if (TaskList.Contains(task))
+            {
+                throw new DuplicateTaskException(task);
+            }
+            
             TaskList.Add(task);
             Console.WriteLine($"Задача \"{task}\" успешно добавлена");
             return Console.ReadLine();
