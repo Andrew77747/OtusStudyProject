@@ -8,4 +8,9 @@
     <RootNamespace>InteractiveMenu</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Otus.ToDoList.ConsoleBot\Otus.ToDoList.ConsoleBot.csproj" />
+    <ProjectReference Include="/Users/andrew/Мой диск/Repositories/OtusStudyProject/InteractiveMenu/Otus.ToDoList.ConsoleBot/Otus.ToDoList.ConsoleBot.csproj" />
+  </ItemGroup>
+
 </Project>
