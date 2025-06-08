@@ -6,25 +6,14 @@ namespace InteractiveMenu;
 
 public class ToDoService : IToDoService
 {
+    private readonly int _maxTasks;
+    private readonly int _maxLength;
     private readonly List<ToDoItem> _tasks = new();
-    
-    public static int TasksCount { get; set; }
-    public static int TaskLength { get; set; }
 
-    public static int GetTasksCount()
+    public ToDoService(int maxTasks, int maxLength)
     {
-        Console.WriteLine("Введите максимально допустимое количество задач");
-        var input = Console.ReadLine();
-        Helper.ValidateString(input);
-        return Helper.ParseAndValidateInt(input, 1, 100);
-    }
-        
-    public static int GetTaskLength()
-    {
-        Console.WriteLine("Введите максимально допустимую длину задачи");
-        var input = Console.ReadLine();
-        Helper.ValidateString(input);
-        return Helper.ParseAndValidateInt(input, 1, 100);
+        _maxTasks = maxTasks;
+        _maxLength = maxLength;
     }
     
     public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
@@ -42,11 +31,11 @@ public class ToDoService : IToDoService
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Некорректное описание задачи");
 
-        if (_tasks.Count >= TasksCount)
-            throw new TaskCountLimitException(TasksCount);
+        if (_tasks.Count >= _maxTasks)
+            throw new TaskCountLimitException(_maxTasks);
 
-        if (name.Length > TaskLength)
-            throw new TaskLengthLimitException(name.Length, TaskLength);
+        if (name.Length > _maxLength)
+            throw new TaskLengthLimitException(name.Length, _maxLength);
 
         if (_tasks.Any(t => t.User.UserId == user.UserId && t.Name == name))
             throw new DuplicateTaskException(name);

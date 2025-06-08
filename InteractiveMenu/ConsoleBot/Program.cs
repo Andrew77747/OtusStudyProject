@@ -1,5 +1,4 @@
-﻿using InteractiveMenu.Exceptions;
-using Otus.ToDoList.ConsoleBot;
+﻿using Otus.ToDoList.ConsoleBot;
 
 namespace InteractiveMenu
 {
@@ -7,29 +6,15 @@ namespace InteractiveMenu
     {
         private static void Main(string[] args)
         {
-            var tasksCountSet = false;
-            var taskLengthSet = false;
-            
-            var userService = new UserService();
-            var toDoService = new ToDoService();
-            var botClient = new ConsoleBotClient();
-            var handler = new UpdateHandler(userService, toDoService);
-
             while (true)
             {
                 try
                 {
-                    if (!tasksCountSet)
-                    {
-                        ToDoService.TasksCount = ToDoService.GetTasksCount();
-                        tasksCountSet = true;
-                    }
-                    
-                    if (!taskLengthSet)
-                    {
-                        ToDoService.TaskLength = ToDoService.GetTaskLength();
-                        taskLengthSet = true;
-                    }
+                    var settings = ToDoConfigurator.GetSettings();
+                    var toDoService = new ToDoService(settings.tasksCount, settings.taskLength);
+                    var botClient = new ConsoleBotClient();
+                    var userService = new UserService();
+                    var handler = new UpdateHandler(userService, toDoService);
 
                     botClient.StartReceiving(handler);
                 }
