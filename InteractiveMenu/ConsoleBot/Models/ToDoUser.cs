@@ -7,15 +7,12 @@ namespace InteractiveMenu
         public string? TelegramUserName { get; set; }
         public DateTime RegisteredAt { get; set; }
 
-        public static ToDoUser Create(long telegramUserId, string telegramUserName)
+        public ToDoUser(long telegramUserId, string telegramUserName)
         {
-            return new ToDoUser
-            {
-                UserId = Guid.NewGuid(),
-                TelegramUserId = telegramUserId,
-                TelegramUserName = telegramUserName,
-                RegisteredAt = DateTime.UtcNow
-            };
+            UserId = Guid.NewGuid();
+            TelegramUserId = telegramUserId;
+            TelegramUserName = telegramUserName;
+            RegisteredAt = DateTime.UtcNow;
         }
     }
 }

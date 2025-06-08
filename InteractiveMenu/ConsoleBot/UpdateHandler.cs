@@ -9,7 +9,6 @@ namespace InteractiveMenu
     {
         private readonly IUserService _userService;
         private readonly IToDoService _toDoService;
-        private ToDoUser? _currentUser;
 
         public UpdateHandler(IUserService userService, IToDoService toDoService)
         {
@@ -25,12 +24,12 @@ namespace InteractiveMenu
 
             try
             {
-                _currentUser = _userService.GetUser(from.Id);
+                var currentUser = _userService.GetUser(from.Id);
                 
                 switch (input)
                 {
                     case Commands.Start:
-                        HandleStartCommand(botClient, chat, from);
+                        HandleStartCommand(botClient, chat, from, currentUser);
                         break;
                     case Commands.Help:
                         HandleHelpCommand(botClient, chat);
@@ -39,25 +38,25 @@ namespace InteractiveMenu
                         HandleInfoCommand(botClient, chat);
                         break;
                     case { } when input.StartsWith(Commands.AddTask):
-                        HandleAddTaskCommand(botClient, chat, input);
+                        HandleAddTaskCommand(botClient, chat, input, currentUser);
                         break;
                     case Commands.ShowTasks:
-                        HandleShowActiveTasksCommand(botClient, chat);
+                        HandleShowActiveTasksCommand(botClient, chat, currentUser);
                         break;
                     case Commands.ShowAllTasks:
-                        HandleShowAllTasksCommand(botClient, chat);
+                        HandleShowAllTasksCommand(botClient, chat, currentUser);
                         break;
                     case { } when input.StartsWith(Commands.RemoveTask):
-                        HandleRemoveTaskCommand(botClient, chat, input);
+                        HandleRemoveTaskCommand(botClient, chat, input, currentUser);
                         break;
                     case { } when input.StartsWith(Commands.CompleteTask):
-                        HandleCompleteTaskCommand(botClient, chat, input);
+                        HandleCompleteTaskCommand(botClient, chat, input, currentUser);
                         break;
                     case Commands.Exit:
                         HandleExitCommand(botClient, chat);
                         break;
                     default:
-                        HandleDefaultCommand(botClient, chat);
+                        HandleDefaultCommand(botClient, chat, currentUser);
                         break;
                 }
             }
@@ -75,11 +74,11 @@ namespace InteractiveMenu
             }
         }
 
-        private void HandleStartCommand(ITelegramBotClient botClient, Chat chat, User from)
+        private void HandleStartCommand(ITelegramBotClient botClient, Chat chat, User from, ToDoUser? currentUser)
         {
-            if (_currentUser == null)
+            if (currentUser == null)
             {
-                _currentUser = _userService.RegisterUser(from.Id, from.Username!);
+                _userService.RegisterUser(from.Id, from.Username!);
                 botClient.SendMessage(chat, "Вы зарегистрированы!\nВам доступны команды:" +
                                             $"\n{string.Join(", ", 
                 Commands.AddTask, Commands.ShowTasks, Commands.RemoveTask, Commands.Help, 
@@ -107,22 +106,29 @@ namespace InteractiveMenu
             botClient.SendMessage(chat, "Версия бота 1.0");
         }
         
-        private void HandleAddTaskCommand(ITelegramBotClient botClient, Chat chat, string input)
+        private void HandleAddTaskCommand(ITelegramBotClient botClient, Chat chat, string input, ToDoUser? currentUser)
         {
-            if (!Helper.IsUserRegistered(botClient, chat, _currentUser)) 
+            if (!Helper.IsUserRegistered(botClient, chat, currentUser)) 
                 return;
 
             var taskDescription = input.Substring(Commands.AddTask.Length).Trim();
-            var task = _toDoService.Add(_currentUser!, taskDescription);
+            
+            if (string.IsNullOrWhiteSpace(taskDescription))
+            {
+                botClient.SendMessage(chat, "Ошибка: вы не указали описание задачи");
+                return;
+            }
+
+            var task = _toDoService.Add(currentUser!, taskDescription);
             botClient.SendMessage(chat, $"Задача добавлена: {task.Name}");
         }
 
-        private void HandleShowActiveTasksCommand(ITelegramBotClient botClient, Chat chat)
+        private void HandleShowActiveTasksCommand(ITelegramBotClient botClient, Chat chat, ToDoUser? currentUser)
         {
-            if (!Helper.IsUserRegistered(botClient, chat, _currentUser)) 
+            if (!Helper.IsUserRegistered(botClient, chat, currentUser)) 
                 return;
 
-            var tasks = _toDoService.GetActiveByUserId(_currentUser!.UserId);
+            var tasks = _toDoService.GetActiveByUserId(currentUser!.UserId);
             
             if (tasks.Count == 0)
             {
@@ -136,12 +142,12 @@ namespace InteractiveMenu
             botClient.SendMessage(chat, message);
         }
         
-        private void HandleShowAllTasksCommand(ITelegramBotClient botClient, Chat chat)
+        private void HandleShowAllTasksCommand(ITelegramBotClient botClient, Chat chat, ToDoUser? currentUser)
         {
-            if (!Helper.IsUserRegistered(botClient, chat, _currentUser)) 
+            if (!Helper.IsUserRegistered(botClient, chat, currentUser)) 
                 return;
 
-            var tasks = _toDoService.GetAllByUserId(_currentUser!.UserId);
+            var tasks = _toDoService.GetAllByUserId(currentUser!.UserId);
             
             if (tasks.Count == 0)
             {
@@ -155,12 +161,12 @@ namespace InteractiveMenu
             botClient.SendMessage(chat, message);
         }
 
-        private void HandleRemoveTaskCommand(ITelegramBotClient botClient, Chat chat, string input)
+        private void HandleRemoveTaskCommand(ITelegramBotClient botClient, Chat chat, string input, ToDoUser? currentUser)
         {
-            if (!Helper.IsUserRegistered(botClient, chat, _currentUser)) 
+            if (!Helper.IsUserRegistered(botClient, chat, currentUser)) 
                 return;
 
-            var tasks = _toDoService.GetActiveByUserId(_currentUser!.UserId).ToList();
+            var tasks = _toDoService.GetActiveByUserId(currentUser!.UserId).ToList();
             
             if (tasks.Count == 0)
             {
@@ -181,12 +187,12 @@ namespace InteractiveMenu
             botClient.SendMessage(chat, $"Задача удалена: {taskToRemove.Name}");
         }
         
-        private void HandleCompleteTaskCommand(ITelegramBotClient botClient, Chat chat, string input)
+        private void HandleCompleteTaskCommand(ITelegramBotClient botClient, Chat chat, string input, ToDoUser? currentUser)
         {
-            if (!Helper.IsUserRegistered(botClient, chat, _currentUser))
+            if (!Helper.IsUserRegistered(botClient, chat, currentUser))
                 return;
 
-            var tasks = _toDoService.GetActiveByUserId(_currentUser!.UserId).ToList();
+            var tasks = _toDoService.GetActiveByUserId(currentUser!.UserId).ToList();
             
             if (tasks.Count == 0)
             {
@@ -220,9 +226,9 @@ namespace InteractiveMenu
             Environment.Exit(0);
         }
 
-        private void HandleDefaultCommand(ITelegramBotClient botClient, Chat chat)
+        private void HandleDefaultCommand(ITelegramBotClient botClient, Chat chat, ToDoUser? currentUser)
         {
-            var commands = _currentUser != null
+            var commands = currentUser != null
                 ? new[] { Commands.AddTask, Commands.ShowTasks, Commands.RemoveTask, Commands.Help, 
                     Commands.Info, Commands.Exit, Commands.CompleteTaskDescription, Commands.ShowAllTasksDescription }
                 : new[] { Commands.Start, Commands.Help, Commands.Info, Commands.Exit };

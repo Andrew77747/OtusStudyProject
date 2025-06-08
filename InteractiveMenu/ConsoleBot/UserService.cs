@@ -13,7 +13,7 @@ namespace InteractiveMenu
                 throw new ArgumentException($"Пользователь с ID {telegramUserId} уже зарегистрирован");
             }
 
-            var newUser = ToDoUser.Create(telegramUserId, telegramUserName);
+            var newUser = new ToDoUser(telegramUserId, telegramUserName);
 
             _users.Add(telegramUserId, newUser);
             return newUser;

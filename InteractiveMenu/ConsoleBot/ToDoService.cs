@@ -51,7 +51,7 @@ public class ToDoService : IToDoService
         if (_tasks.Any(t => t.User.UserId == user.UserId && t.Name == name))
             throw new DuplicateTaskException(name);
 
-        var newTask = ToDoItem.Create(user, name);
+        var newTask = new ToDoItem(user, name);
         _tasks.Add(newTask);
         return newTask;
     }
